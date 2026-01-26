@@ -14,6 +14,7 @@ interface User {
   name: string;
   email: string;
   avatar?: string;
+  role: "user" | "admin";
   fitnessMetrics?: FitnessMetrics;
 }
 
@@ -82,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem("token");
   };
 
   const updateFitnessMetrics = (metrics: FitnessMetrics) => {
@@ -91,8 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         fitnessMetrics: {
           ...user.fitnessMetrics,
           ...metrics,
-          lastCalculated: new Date(),
-        },
+          lastCalculated: new Date()
+        }
       });
     }
   };

@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 interface SignInPageProps {
 	onSwitchToSignUp: () => void;
-	onSuccess: () => void;
+	onSuccess: (redirectTo?: string) => void;
 }
 
 export function SignInPage({ onSwitchToSignUp, onSuccess }: SignInPageProps) {
