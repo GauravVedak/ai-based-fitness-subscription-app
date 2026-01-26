@@ -17,11 +17,16 @@ interface User {
   fitnessMetrics?: FitnessMetrics;
 }
 
+interface AuthResult {
+  ok: boolean;
+  message?: string;
+}
+
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  loginWithSocial: (provider: string) => Promise<boolean>;
-  signup: (name: string, email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<AuthResult>;
+  loginWithSocial: (provider: string) => Promise<AuthResult>;
+  signup: (name: string, email: string, password: string) => Promise<AuthResult>;
   logout: () => void;
   updateFitnessMetrics: (metrics: FitnessMetrics) => void;
 }
@@ -31,46 +36,48 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    // Mock successful login
-    setUser({
-      id: "1",
-      name: email.split("@")[0],
-      email: email,
-    });
-    return true;
+  const login = async (email: string, password: string): Promise<AuthResult> => {
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setUser(data.user);
+        return { ok: true };
+      }
+      return { ok: false, message: data.message || data.error || "Invalid credentials" };
+    } catch (err) {
+      return { ok: false, message: String(err) };
+    }
   };
 
-  const loginWithSocial = async (provider: string): Promise<boolean> => {
-    // Simulate social login
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    setUser({
-      id: "1",
-      name: `User from ${provider}`,
-      email: `user@${provider.toLowerCase()}.com`,
-    });
-    return true;
+  const loginWithSocial = async (provider: string): Promise<AuthResult> => {
+    return { ok: false, message: "Social login not configured" };
   };
 
   const signup = async (
     name: string,
     email: string,
     password: string
-  ): Promise<boolean> => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    // Mock successful signup
-    setUser({
-      id: "1",
-      name: name,
-      email: email,
-    });
-    return true;
+  ): Promise<AuthResult> => {
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) {
+        setUser(data.user);
+        return { ok: true };
+      }
+      return { ok: false, message: data.message || data.error };
+    } catch (err) {
+      return { ok: false, message: String(err) };
+    }
   };
 
   const logout = () => {
