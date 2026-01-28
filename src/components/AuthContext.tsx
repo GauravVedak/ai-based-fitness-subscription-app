@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { useUser } from "@auth0/nextjs-auth0/client";
 
 interface FitnessMetrics {
@@ -19,6 +25,11 @@ interface User {
   fitnessMetrics?: FitnessMetrics;
 }
 
+interface AuthResult {
+  ok: boolean;
+  message?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
@@ -35,7 +46,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { user: auth0User, isLoading: auth0Loading } = useUser();
   const [localUser, setLocalUser] = useState<User | null>(null);
-  const [fitnessMetrics, setFitnessMetrics] = useState<FitnessMetrics | undefined>();
+  const [fitnessMetrics, setFitnessMetrics] = useState<
+    FitnessMetrics | undefined
+  >();
 
   // Sync Auth0 user with local user state
   useEffect(() => {
@@ -92,9 +105,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [auth0User, auth0Loading]);
 
-  const API_BASE = typeof window !== "undefined" && window.location.hostname === "localhost"
-    ? "http://localhost:5000"
-    : "";
+  const API_BASE =
+    typeof window !== "undefined" && window.location.hostname === "localhost"
+      ? "http://localhost:5000"
+      : "";
 
   // Redirect to Auth0 login
   const loginWithAuth0 = () => {
@@ -111,9 +125,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Social login - redirects to Auth0 with connection hint
   const loginWithSocial = async (provider: string): Promise<boolean> => {
     const connectionMap: Record<string, string> = {
-      "Google": "google-oauth2",
-      "Apple": "apple",
-      "Microsoft": "windowslive",
+      Google: "google-oauth2",
+      Apple: "apple",
+      Microsoft: "windowslive",
     };
     const connection = connectionMap[provider] || provider.toLowerCase();
     window.location.href = `/auth/login?connection=${connection}`;
@@ -124,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signup = async (
     name: string,
     email: string,
-    password: string
+    password: string,
   ): Promise<boolean> => {
     window.location.href = "/auth/login?screen_hint=signup";
     return true;
@@ -142,7 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       lastCalculated: new Date(),
     };
     setFitnessMetrics(updatedMetrics);
-    
+
     if (localUser) {
       setLocalUser({
         ...localUser,
@@ -153,15 +167,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ 
-        user: localUser, 
+      value={{
+        user: localUser,
         isLoading: auth0Loading,
-        login, 
-        loginWithSocial, 
+        login,
+        loginWithSocial,
         loginWithAuth0,
-        signup, 
-        logout, 
-        updateFitnessMetrics 
+        signup,
+        logout,
+        updateFitnessMetrics,
       }}
     >
       {children}

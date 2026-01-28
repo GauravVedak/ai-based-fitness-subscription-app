@@ -6,6 +6,7 @@
 		"dev": "nodemon server.js",
 		"dev:frontend": "next dev",
 		"dev:api": "nodemon server.js",
+		"build": "next build",
 		"start": "node server.js",
 		"lint": "eslint"
 	},
