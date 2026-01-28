@@ -1,17 +1,9 @@
-<<<<<<< HEAD
-/* eslint-disable @typescript-eslint/no-require-imports */
-const express = require("express");
-const app = express();
-=======
->>>>>>> 97d42e2b9301784ed0ecc25ac9970eba71b71e93
-
-
-const express = require("express");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const cors = require("cors");
-const { User } = require("./auth/models/user");
-const { env } = require("./config/env");
+import express from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import cors from "cors";
+import { User } from "./auth/models/user.js";
+import { env } from "./config/env.js";
 
 const app = express();
 app.use(express.json());
@@ -74,8 +66,93 @@ app.post("/api/auth/login", async (req, res) => {
 		);
 		return res.status(200).json({ token, user: { email: user.email } });
 	} catch (err) {
+		console.error("Login error:", err);
 		return res.status(500).json({ message: "Server error." });
 	}
 });
 
-module.exports = app;
+// Sync Auth0 user to MongoDB
+app.post("/api/auth/sync-auth0-user", async (req, res) => {
+	console.log("Sync Auth0 user endpoint called", req.body);
+	try {
+		const { auth0UserId, email, name, picture } = req.body;
+		
+		if (!auth0UserId || !email) {
+			console.error("Missing required fields: auth0UserId or email");
+			return res.status(400).json({ message: "Auth0 user ID and email are required." });
+		}
+
+		// Check if user exists by auth0UserId
+		let user = await User.findOne({ auth0UserId });
+		
+		if (user) {
+			console.log("User found by auth0UserId, updating...", user._id);
+			// Update existing user
+			user.email = email;
+			if (name) user.name = name;
+			if (picture) user.picture = picture;
+			await user.save();
+			console.log("User updated successfully:", { userId: user._id, email: user.email, auth0UserId: user.auth0UserId });
+			return res.status(200).json({ 
+				message: "User updated successfully.", 
+				user: { 
+					id: user._id, 
+					email: user.email, 
+					auth0UserId: user.auth0UserId,
+					name: user.name 
+				},
+				status: "updated"
+			});
+		}
+
+		// Check if user exists by email (in case auth0UserId wasn't set before)
+		user = await User.findOne({ email });
+		
+		if (user) {
+			console.log("User found by email, updating with auth0UserId...", user._id);
+			// Update existing user with auth0UserId
+			user.auth0UserId = auth0UserId;
+			if (name) user.name = name;
+			if (picture) user.picture = picture;
+			await user.save();
+			console.log("User updated with auth0UserId successfully:", { userId: user._id, email: user.email, auth0UserId: user.auth0UserId });
+			return res.status(200).json({ 
+				message: "User updated successfully.", 
+				user: { 
+					id: user._id, 
+					email: user.email, 
+					auth0UserId: user.auth0UserId,
+					name: user.name 
+				},
+				status: "updated"
+			});
+		}
+
+		// Create new user
+		console.log("Creating new user with Auth0 data...");
+		user = new User({
+			email,
+			auth0UserId,
+			name: name || undefined,
+			picture: picture || undefined,
+			status: "active",
+		});
+		await user.save();
+		console.log("User created successfully in MongoDB:", { userId: user._id, email: user.email, auth0UserId: user.auth0UserId });
+		return res.status(201).json({ 
+			message: "User created successfully.", 
+			user: { 
+				id: user._id, 
+				email: user.email, 
+				auth0UserId: user.auth0UserId,
+				name: user.name 
+			},
+			status: "created"
+		});
+	} catch (err) {
+		console.error("Sync Auth0 user error:", err);
+		return res.status(500).json({ message: "Server error.", error: err.message });
+	}
+});
+
+export default app;

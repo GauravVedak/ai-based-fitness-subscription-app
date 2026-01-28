@@ -5,7 +5,7 @@ import { Label } from "./ui/label";
 import { Card } from "./ui/card";
 import { Separator } from "./ui/separator";
 import { useAuth } from "./AuthContext";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 interface SignInPageProps {
@@ -14,7 +14,7 @@ interface SignInPageProps {
 }
 
 export function SignInPage({ onSwitchToSignUp, onSuccess }: SignInPageProps) {
-	const { login, loginWithSocial } = useAuth();
+	const { login, loginWithSocial, loginWithAuth0 } = useAuth();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
@@ -30,14 +30,10 @@ export function SignInPage({ onSwitchToSignUp, onSuccess }: SignInPageProps) {
 
 		setIsLoading(true);
 		try {
-			const success = await login(email, password);
-			if (success) {
-				toast.success("Welcome back!");
-				onSuccess(password === "admin123" ? "admin-panel" : undefined);
-			}
+			// Redirect to Auth0 login
+			await login(email, password);
 		} catch (error) {
 			toast.error("Invalid credentials");
-		} finally {
 			setIsLoading(false);
 		}
 	};
@@ -45,16 +41,16 @@ export function SignInPage({ onSwitchToSignUp, onSuccess }: SignInPageProps) {
 	const handleSocialLogin = async (provider: string) => {
 		setIsLoading(true);
 		try {
-			const success = await loginWithSocial(provider);
-			if (success) {
-				toast.success(`Signed in with ${provider}`);
-				onSuccess();
-			}
+			await loginWithSocial(provider);
 		} catch (error) {
 			toast.error(`Failed to sign in with ${provider}`);
-		} finally {
 			setIsLoading(false);
 		}
+	};
+
+	const handleAuth0Login = () => {
+		setIsLoading(true);
+		loginWithAuth0();
 	};
 
 	return (
@@ -63,6 +59,22 @@ export function SignInPage({ onSwitchToSignUp, onSuccess }: SignInPageProps) {
 				<div className="text-center mb-8">
 					<h2 className="mb-2">Welcome back 👋</h2>
 					<p className="text-gray-600">Sign in to continue to Vital Box</p>
+				</div>
+
+				{/* Auth0 Universal Login Button */}
+				<a
+					href="/auth/login"
+					className="w-full mb-6 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+				>
+					<Shield className="w-5 h-5" />
+					Continue with Auth0
+				</a>
+
+				<div className="relative my-6">
+					<Separator />
+					<span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-gray-500 text-sm">
+						Or sign in with email
+					</span>
 				</div>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
@@ -123,7 +135,7 @@ export function SignInPage({ onSwitchToSignUp, onSuccess }: SignInPageProps) {
 
 				<div className="relative my-6">
 					<Separator />
-					<span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-gray-500">
+					<span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-gray-500 text-sm">
 						Or continue with
 					</span>
 				</div>
@@ -179,12 +191,12 @@ export function SignInPage({ onSwitchToSignUp, onSuccess }: SignInPageProps) {
 				<div className="mt-6 text-center">
 					<p className="text-gray-600">
 						Don't have an account?{" "}
-						<button
-							onClick={onSwitchToSignUp}
+						<a
+							href="/auth/login?screen_hint=signup"
 							className="text-emerald-600 hover:text-emerald-700 transition-colors"
 						>
 							Sign Up
-						</button>
+						</a>
 					</p>
 				</div>
 			</Card>

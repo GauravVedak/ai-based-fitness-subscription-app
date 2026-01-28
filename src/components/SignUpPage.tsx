@@ -5,7 +5,7 @@ import { Label } from "./ui/label";
 import { Card } from "./ui/card";
 import { Separator } from "./ui/separator";
 import { useAuth } from "./AuthContext";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 interface SignUpPageProps {
@@ -43,14 +43,10 @@ export function SignUpPage({ onSwitchToSignIn, onSuccess }: SignUpPageProps) {
 
 		setIsLoading(true);
 		try {
-			const success = await signup(fullName, email, password);
-			if (success) {
-				toast.success("Account created successfully!");
-				onSuccess(password === "admin123" ? "admin-panel" : undefined);
-			}
+			// Redirect to Auth0 signup
+			await signup(fullName, email, password);
 		} catch (error) {
 			toast.error("Failed to create account");
-		} finally {
 			setIsLoading(false);
 		}
 	};
@@ -58,14 +54,9 @@ export function SignUpPage({ onSwitchToSignIn, onSuccess }: SignUpPageProps) {
 	const handleSocialSignup = async (provider: string) => {
 		setIsLoading(true);
 		try {
-			const success = await loginWithSocial(provider);
-			if (success) {
-				toast.success(`Signed up with ${provider}`);
-				onSuccess();
-			}
+			await loginWithSocial(provider);
 		} catch (error) {
 			toast.error(`Failed to sign up with ${provider}`);
-		} finally {
 			setIsLoading(false);
 		}
 	};
@@ -78,6 +69,22 @@ export function SignUpPage({ onSwitchToSignIn, onSuccess }: SignUpPageProps) {
 					<p className="text-gray-600">
 						Join Vital Box and start your fitness journey
 					</p>
+				</div>
+
+				{/* Auth0 Universal Signup Button */}
+				<a
+					href="/auth/login?screen_hint=signup"
+					className="w-full mb-6 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+				>
+					<Shield className="w-5 h-5" />
+					Sign up with Auth0
+				</a>
+
+				<div className="relative my-6">
+					<Separator />
+					<span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-gray-500 text-sm">
+						Or sign up with email
+					</span>
 				</div>
 
 				<form onSubmit={handleSubmit} className="space-y-4">
@@ -233,12 +240,12 @@ export function SignUpPage({ onSwitchToSignIn, onSuccess }: SignUpPageProps) {
 				<div className="mt-6 text-center">
 					<p className="text-gray-600">
 						Already have an account?{" "}
-						<button
-							onClick={onSwitchToSignIn}
+						<a
+							href="/auth/login"
 							className="text-emerald-600 hover:text-emerald-700 transition-colors"
 						>
 							Sign In
-						</button>
+						</a>
 					</p>
 				</div>
 			</Card>

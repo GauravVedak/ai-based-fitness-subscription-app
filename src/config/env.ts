@@ -1,4 +1,4 @@
-const dotenv = require("dotenv");
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -11,4 +11,4 @@ const env = {
 	jwtRefreshExpiresIn: "7d",
 };
 
-module.exports = { env };
+export { env };
