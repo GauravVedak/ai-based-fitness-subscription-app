@@ -1,11 +1,13 @@
 import { MongoClient } from "mongodb";
 
 // support either MONGODB_URI or legacy MONGO_URI env var name
-const uri = process.env.MONGO_URI || process.env.MONGO_URI;
+const uri = process.env.MONGODB_URI || process.env.MONGO_URI;
 const options = {};
 
 if (!uri) {
-  throw new Error("Please define the MONGODB_URI or MONGO_URI environment variable in .env.local");
+  throw new Error(
+    "Please define the MONGODB_URI or MONGO_URI environment variable in .env.local",
+  );
 }
 
 let client: MongoClient;
