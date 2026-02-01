@@ -22,108 +22,6 @@ import { ImageWithFallback } from "./figma/ImageWithFallback";
 export function HomePage() {
   const { user } = useAuth();
   const { getRecommendations, getAIInsights } = useAIRecommendations();
-  const [activePersona, setActivePersona] = useState(0);
-
-  // Animated background component
-  const AnimatedBackground = () => (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none">
-      {/* Clinical Grid */}
-      <div 
-        className="absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage: `
-            linear-gradient(to right, #10b981 1px, transparent 1px),
-            linear-gradient(to bottom, #10b981 1px, transparent 1px)
-          `,
-          backgroundSize: '60px 60px'
-        }}
-      />
-
-      {/* Floating Molecules */}
-      {[...Array(12)].map((_, i) => (
-        <motion.div
-          key={`molecule-${i}`}
-          className="absolute w-2 h-2 rounded-full bg-emerald-400/20"
-          style={{
-            left: `${10 + i * 8}%`,
-            top: `${15 + (i % 3) * 30}%`,
-          }}
-          animate={{
-            y: [0, -40, 0],
-            x: [0, Math.sin(i) * 20, 0],
-            opacity: [0.2, 0.5, 0.2],
-            scale: [1, 1.5, 1],
-          }}
-          transition={{
-            duration: 4 + i * 0.3,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: i * 0.2,
-          }}
-        />
-      ))}
-
-      {/* ECG Heartbeat Line */}
-      <svg className="absolute top-1/3 left-0 w-full h-32 opacity-10" viewBox="0 0 1200 100">
-        <motion.path
-          d="M0,50 L200,50 L220,30 L240,70 L260,50 L1200,50"
-          stroke="url(#ecgGradient)"
-          strokeWidth="2"
-          fill="none"
-          initial={{ pathLength: 0, opacity: 0 }}
-          animate={{ pathLength: 1, opacity: 1 }}
-          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-        />
-        <defs>
-          <linearGradient id="ecgGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#10b981" />
-            <stop offset="50%" stopColor="#14b8a6" />
-            <stop offset="100%" stopColor="#06b6d4" />
-          </linearGradient>
-        </defs>
-      </svg>
-
-      {/* Gradient Orbs */}
-      <motion.div
-        className="absolute top-1/4 -left-40 w-[500px] h-[500px] bg-gradient-to-br from-emerald-200/10 to-teal-200/10 rounded-full blur-3xl"
-        animate={{
-          x: [0, 50, 0],
-          y: [0, -30, 0],
-          scale: [1, 1.1, 1],
-        }}
-        transition={{
-          duration: 20,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      />
-      <motion.div
-        className="absolute bottom-1/4 -right-40 w-[600px] h-[600px] bg-gradient-to-br from-teal-200/10 to-cyan-200/10 rounded-full blur-3xl"
-        animate={{
-          x: [0, -40, 0],
-          y: [0, 40, 0],
-          scale: [1, 1.15, 1],
-        }}
-        transition={{
-          duration: 25,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      />
-      <motion.div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-gradient-to-br from-cyan-200/5 to-emerald-200/5 rounded-full blur-3xl"
-        animate={{
-          scale: [1, 1.2, 1],
-          rotate: [0, 180, 360],
-        }}
-        transition={{
-          duration: 30,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      />
-    </div>
-  );
 
   // Hero Section
   const HeroSection = () => (
@@ -137,28 +35,6 @@ export function HomePage() {
             transition={{ duration: 0.8 }}
             className="text-center lg:text-left"
           >
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white/70 backdrop-blur-xl rounded-full border border-emerald-300/50 shadow-lg mb-8"
-            >
-              <motion.div
-                animate={{ rotate: [0, 360] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              >
-                <Sparkles className="w-4 h-4 text-emerald-600" />
-              </motion.div>
-              <span className="text-emerald-700 uppercase tracking-wider" style={{ fontSize: '0.75rem', letterSpacing: '0.15em', fontWeight: 600 }}>
-                Medical AI Verified
-              </span>
-              <motion.div
-                className="w-2 h-2 rounded-full bg-emerald-500"
-                animate={{ scale: [1, 1.3, 1], opacity: [1, 0.5, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-              />
-            </motion.div>
-
             <h1 className="mb-6 tracking-tight leading-tight" style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 700 }}>
               <motion.span
                 className="block"
@@ -297,45 +173,13 @@ export function HomePage() {
           >
             <div className="relative w-full aspect-square max-w-lg mx-auto">
               {/* Main Product Image */}
-              <motion.div
-                className="relative z-10"
-                animate={{ y: [0, -20, 0] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              >
                 <div className="w-full h-full bg-gradient-to-br from-white/60 to-white/40 backdrop-blur-2xl rounded-[3rem] border border-gray-200/60 shadow-2xl p-12 flex items-center justify-center">
                   <ImageWithFallback
                     src="https://images.unsplash.com/photo-1680265158261-5fd6ba5d9959?w=600"
                     alt="Vital Box Supplement"
                     className="w-full h-full object-contain"
                   />
-                </div>
-              </motion.div>
-
-              {/* Floating Medical Icons */}
-              {[
-                { icon: Heart, position: { top: '10%', left: '5%' }, delay: 0 },
-                { icon: Brain, position: { top: '15%', right: '10%' }, delay: 0.2 },
-                { icon: Pill, position: { bottom: '20%', left: '8%' }, delay: 0.4 },
-                { icon: Activity, position: { bottom: '15%', right: '5%' }, delay: 0.6 },
-              ].map((item, idx) => (
-                <motion.div
-                  key={idx}
-                  className="absolute w-16 h-16 bg-white/90 backdrop-blur-xl rounded-2xl border border-emerald-200/50 shadow-xl flex items-center justify-center"
-                  style={item.position}
-                  animate={{
-                    y: [0, -15, 0],
-                    rotate: [0, 5, -5, 0],
-                  }}
-                  transition={{
-                    duration: 4,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: item.delay,
-                  }}
-                >
-                  <item.icon className="w-8 h-8 text-emerald-600" />
-                </motion.div>
-              ))}
+                </div>           
 
               {/* AI Circuit Badge */}
               <motion.div
@@ -352,11 +196,6 @@ export function HomePage() {
                 <div className="w-full h-full bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-2xl">
                   <Sparkles className="w-12 h-12 text-white" />
                 </div>
-                <motion.div
-                  className="absolute inset-0 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500"
-                  animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                />
               </motion.div>
             </div>
           </motion.div>
@@ -704,112 +543,6 @@ export function HomePage() {
     </section>
   );
 
-  // Testimonials
-  const Testimonials = () => {
-    const testimonials = [
-      {
-        name: "Sarah M.",
-        goal: "Weight Loss",
-        feedback: "Lost 15lbs safely with AI recommendations. Every product was clinically verified!",
-        stat: "15lbs lost",
-        rating: 5,
-      },
-      {
-        name: "Mike T.",
-        goal: "Muscle Gain",
-        feedback: "The personalized stack worked perfectly. Medical-grade quality you can trust.",
-        stat: "10kg gained",
-        rating: 5,
-      },
-      {
-        name: "Jessica L.",
-        goal: "Wellness",
-        feedback: "Finally, supplements that actually match my health needs. AI made it simple.",
-        stat: "98% better",
-        rating: 5,
-      },
-    ];
-
-    return (
-      <section className="relative py-32 px-6 bg-gradient-to-b from-white to-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/70 backdrop-blur-xl rounded-full border border-emerald-300/50 shadow-lg mb-6">
-              <Users className="w-4 h-4 text-emerald-600" />
-              <span className="text-emerald-700 uppercase tracking-wider" style={{ fontSize: '0.75rem', letterSpacing: '0.15em', fontWeight: 600 }}>
-                Trusted Results
-              </span>
-            </div>
-            <h2 className="tracking-tight mb-4" style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', fontWeight: 700 }}>
-              <span className="text-gray-900">Real </span>
-              <span className="bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent inline-block">
-                Success Stories
-              </span>
-            </h2>
-            <div className="flex items-center justify-center gap-2 text-emerald-600 mb-2">
-              <CheckCircle className="w-5 h-5" />
-              <span style={{ fontSize: '1.125rem', fontWeight: 600 }}>
-                98% feel safer with medical-grade AI suggestions
-              </span>
-            </div>
-            <p className="text-gray-600 max-w-2xl mx-auto" style={{ fontSize: '1rem' }}>
-              Need extra guidance? You can get in contact with a physician
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-                whileHover={{ y: -8 }}
-                className="bg-white/70 backdrop-blur-xl rounded-3xl border border-gray-200/60 shadow-xl p-8"
-              >
-                <div className="flex gap-1 mb-4">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ scale: 0 }}
-                      whileInView={{ scale: 1 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: 0.5 + i * 0.1 }}
-                    >
-                      <Award className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-                    </motion.div>
-                  ))}
-                </div>
-                <p className="text-gray-700 mb-6 italic">
-                  "{testimonial.feedback}"
-                </p>
-                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                  <div>
-                    <p className="text-gray-900" style={{ fontWeight: 600 }}>
-                      {testimonial.name}
-                    </p>
-                    <p className="text-gray-600 text-sm">{testimonial.goal}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-emerald-600" style={{ fontWeight: 700 }}>
-                      {testimonial.stat}
-                    </p>
-                    <p className="text-gray-600 text-xs">Clinically Improved</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  };
 
   // Minimal Footer
   const MinimalFooter = () => (
@@ -829,20 +562,9 @@ export function HomePage() {
               Vital Box
             </span>
           </div>
-          <p className="text-gray-600 text-sm">
-            Your safety is our top priority—every recommendation is AI-personalized and clinically verified.
-          </p>
           <p className="text-gray-400 text-xs">
             © 2025 Vital Box. All rights reserved.
           </p>
-          <div className="flex gap-6 text-sm">
-            <button className="text-gray-600 hover:text-emerald-600 transition-colors">
-              Privacy Policy
-            </button>
-            <button className="text-gray-600 hover:text-emerald-600 transition-colors">
-              Medical Assurance
-            </button>
-          </div>
         </motion.div>
       </div>
     </footer>
@@ -850,14 +572,12 @@ export function HomePage() {
 
   return (
     <div className="relative min-h-screen bg-white">
-      <AnimatedBackground />
       <div className="relative z-10">
         <HeroSection />
-        <PersonalizedPicks />
-        <MedicalAssurance />
         <HowAIWorks />
+        <MedicalAssurance />
+        <PersonalizedPicks />
         <InstantQuizCTA />
-        <Testimonials />
         <MinimalFooter />
       </div>
     </div>
