@@ -220,6 +220,8 @@ const categories = [
   { id: "wellness", label: "Wellness", icon: Activity },
 ];
 
+const CART_STORAGE_KEY = "vitalBoxCart";
+
 export function ChooseBoxPage({ onSignInClick }: ChooseBoxPageProps) {
   const { user } = useAuth();
   const { getRecommendations, products, addProductFeedback, getAIInsights } = useAIRecommendations();
@@ -237,6 +239,39 @@ export function ChooseBoxPage({ onSignInClick }: ChooseBoxPageProps) {
     const insights = getAIInsights();
     setAIInsights(insights);
   }, [user, getRecommendations, getAIInsights]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const storedCart = window.localStorage.getItem(CART_STORAGE_KEY);
+    if (!storedCart) {
+      return;
+    }
+    try {
+      const parsed = JSON.parse(storedCart);
+      if (Array.isArray(parsed)) {
+        const sanitized = parsed.filter(
+          (item) =>
+            item &&
+            typeof item === "object" &&
+            typeof item.quantity === "number" &&
+            item.product &&
+            typeof item.product.id === "string"
+        ) as { product: Product; quantity: number }[];
+        setCart(sanitized);
+      }
+    } catch {
+      // Ignore malformed storage data
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+  }, [cart]);
 
   const filteredProducts = products.filter((product) => {
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
