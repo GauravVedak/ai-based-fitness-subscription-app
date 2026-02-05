@@ -1,15 +1,14 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { motion } from "motion/react";
 import { ArrowLeft, BadgePercent, CheckCircle2, CreditCard, ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
+import type { Product } from "./AIRecommendationEngine";
 
 type Plan = {
   id: string;
   label: string;
   duration: string;
-  price: number;
-  monthly: number;
   highlight: string;
 };
 
@@ -25,24 +24,18 @@ const plans: Plan[] = [
     id: "three-month",
     label: "3 Months",
     duration: "12 weeks",
-    price: 99,
-    monthly: 33,
     highlight: "Flexible starter plan",
   },
   {
     id: "six-month",
     label: "6 Months",
     duration: "24 weeks",
-    price: 179,
-    monthly: 29,
     highlight: "Most popular plan",
   },
   {
     id: "yearly",
     label: "Yearly",
     duration: "12 months",
-    price: 299,
-    monthly: 25,
     highlight: "Best value for long term",
   },
 ];
@@ -53,15 +46,61 @@ const promoCatalog: Promo[] = [
   { code: "YEAR20", type: "percent", value: 20, label: "Yearly special 20% off" },
 ];
 
+type CartItem = {
+  product: Product;
+  quantity: number;
+};
+
+const CART_STORAGE_KEY = "vitalBoxCart";
+const SHIPPING_BY_PLAN: Record<Plan["id"], number> = {
+  "three-month": 10,
+  "six-month": 5,
+  yearly: 0,
+};
+const SERVICE_RATE = 0.1;
+const TAX_RATE = 0.13;
+
 export function CheckoutPage() {
   const [selectedPlanId, setSelectedPlanId] = useState(plans[1].id);
   const [promoInput, setPromoInput] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<Promo | null>(null);
   const [promoMessage, setPromoMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    const storedCart = window.localStorage.getItem(CART_STORAGE_KEY);
+    if (!storedCart) {
+      return;
+    }
+    try {
+      const parsed = JSON.parse(storedCart);
+      if (Array.isArray(parsed)) {
+        const sanitized = parsed.filter(
+          (item) =>
+            item &&
+            typeof item === "object" &&
+            typeof item.quantity === "number" &&
+            item.product &&
+            typeof item.product.id === "string"
+        ) as CartItem[];
+        setCartItems(sanitized);
+      }
+    } catch {
+      // Ignore malformed storage data
+    }
+  }, []);
 
   const selectedPlan = useMemo(
     () => plans.find((plan) => plan.id === selectedPlanId) ?? plans[0],
     [selectedPlanId]
+  );
+
+  const itemsSubtotal = useMemo(
+    () => cartItems.reduce((sum, item) => sum + item.product.price * item.quantity, 0),
+    [cartItems]
   );
 
   const discount = useMemo(() => {
@@ -69,12 +108,18 @@ export function CheckoutPage() {
       return 0;
     }
     if (appliedPromo.type === "percent") {
-      return selectedPlan.price * (appliedPromo.value / 100);
+      return itemsSubtotal * (appliedPromo.value / 100);
     }
     return appliedPromo.value;
-  }, [appliedPromo, selectedPlan.price]);
+  }, [appliedPromo, itemsSubtotal]);
 
-  const total = Math.max(0, selectedPlan.price - discount);
+  const cappedDiscount = Math.min(discount, itemsSubtotal);
+  const itemsSubtotalAfterDiscount = Math.max(0, itemsSubtotal - cappedDiscount);
+  const shippingFee = SHIPPING_BY_PLAN[selectedPlan.id] ?? 0;
+  const serviceFee = itemsSubtotalAfterDiscount * SERVICE_RATE;
+  const taxableSubtotal = itemsSubtotalAfterDiscount + serviceFee + shippingFee;
+  const tax = taxableSubtotal * TAX_RATE;
+  const total = taxableSubtotal + tax;
 
   const handleApplyPromo = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -99,12 +144,12 @@ export function CheckoutPage() {
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-16 px-6 bg-gradient-to-b from-slate-50 via-white to-white">
-      <div className="max-w-6xl mx-auto space-y-10">
-        <div className="flex flex-col gap-6">
+    <div className="min-h-screen pt-24 pb-16 px-6 bg-gradient-to-b from-slate-50 via-white to-white flex flex-col items-center">
+      <div className="mx-auto flex w-full max-w-5xl flex-col items-center space-y-10">
+        <div className="flex flex-col items-center gap-6 text-center">
           <motion.button
             onClick={handleBackToPlans}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 self-center"
             whileHover={{ x: -2 }}
           >
             <ArrowLeft className="h-4 w-4" />
@@ -123,14 +168,14 @@ export function CheckoutPage() {
             <h1 className="text-3xl font-bold text-slate-900">
               Complete your subscription
             </h1>
-            <p className="text-slate-600 max-w-2xl">
+            <p className="text-slate-600 max-w-2xl mx-auto">
               Choose a subscription, apply a promotion, and confirm your checkout.
             </p>
           </motion.div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid w-full gap-6 lg:grid-cols-2">
+          <div className="space-y-6 w-full">
             <Card>
               <CardHeader>
                 <CardTitle>Select your subscription</CardTitle>
@@ -163,12 +208,7 @@ export function CheckoutPage() {
                             <CheckCircle2 className="h-5 w-5 text-emerald-600" />
                           )}
                         </div>
-                        <p className="text-3xl font-semibold text-slate-900 mt-3">
-                          ${plan.price}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          ${plan.monthly}/month - {plan.duration}
-                        </p>
+                        <p className="text-sm text-slate-600 mt-3">{plan.duration}</p>
                         <p className="text-sm text-slate-600 mt-3">{plan.highlight}</p>
                       </motion.button>
                     );
@@ -242,14 +282,43 @@ export function CheckoutPage() {
               </CardContent>
             </Card>
           </div>
-          <div className="space-y-6">
+          <div className="space-y-6 w-full">
             <Card>
               <CardHeader>
                 <CardTitle>Order summary</CardTitle>
                 <CardDescription>Review your total before checkout.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {cartItems.length > 0 ? (
+                  <div className="space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Selected products
+                    </p>
+                    {cartItems.map((item) => (
+                      <div key={item.product.id} className="flex items-start justify-between text-sm">
+                        <div>
+                          <p className="font-semibold text-slate-800">{item.product.name}</p>
+                          <p className="text-xs text-slate-500">Qty {item.quantity}</p>
+                        </div>
+                        <span className="font-semibold text-slate-900">
+                          ${(item.product.price * item.quantity).toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-500">
+                    No products selected yet. Go back to Choose Box to add items.
+                  </div>
+                )}
+
                 <div className="space-y-3 text-sm text-slate-600">
+                  <div className="flex items-center justify-between">
+                    <span>Items subtotal</span>
+                    <span className="font-semibold text-slate-900">
+                      ${itemsSubtotal.toFixed(2)}
+                    </span>
+                  </div>
                   <div className="flex items-center justify-between">
                     <span>Selected plan</span>
                     <span className="font-semibold text-slate-900">
@@ -257,19 +326,31 @@ export function CheckoutPage() {
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>Plan price</span>
-                    <span className="font-semibold text-slate-900">
-                      ${selectedPlan.price.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
                     <span>Discount</span>
                     <span
                       className={`font-semibold ${
-                        discount > 0 ? "text-emerald-600" : "text-slate-400"
+                        cappedDiscount > 0 ? "text-emerald-600" : "text-slate-400"
                       }`}
                     >
-                      -${discount.toFixed(2)}
+                      -${cappedDiscount.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Shipping</span>
+                    <span className="font-semibold text-slate-900">
+                      ${shippingFee.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Service fee (10%)</span>
+                    <span className="font-semibold text-slate-900">
+                      ${serviceFee.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>HST/GST (13%)</span>
+                    <span className="font-semibold text-slate-900">
+                      ${tax.toFixed(2)}
                     </span>
                   </div>
                 </div>
