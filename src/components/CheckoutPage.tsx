@@ -57,7 +57,7 @@ const SHIPPING_BY_PLAN: Record<Plan["id"], number> = {
   "six-month": 5,
   yearly: 0,
 };
-const SERVICE_RATE = 0.02;
+const SERVICE_RATE = 0.01;
 const TAX_RATE = 0.13;
 
 export function CheckoutPage() {
@@ -342,7 +342,7 @@ export function CheckoutPage() {
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>Service fee (2%)</span>
+                    <span>Service fee (10%)</span>
                     <span className="font-semibold text-slate-900">
                       ${serviceFee.toFixed(2)}
                     </span>
