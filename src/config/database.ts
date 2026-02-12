@@ -10,4 +10,4 @@ async function connectDatabase() {
   console.log("MongoDB connected");
 }
 
-module.exports = connectDatabase;
+export default connectDatabase;
