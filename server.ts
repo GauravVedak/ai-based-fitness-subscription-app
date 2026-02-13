@@ -1,7 +1,7 @@
 import "dotenv/config";
-import app from "./src/api-app";
-import connectDatabase from "./src/config/database";
-import { env } from "./src/config/env";
+import app from "./src/app.js";
+import connectDatabase from "./src/config/database.js";
+import { env } from "./src/config/env.js";
 
 async function start() {
   try {

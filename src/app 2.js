@@ -1,14 +1,14 @@
 // app.js
-import express, { type Express, type Request, type Response } from "express";
+import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { User } from "./auth/models/user.js";
 import { RefreshToken } from "./auth/models/refreshToken.js";
-import { env } from "./config/env";
+import { env } from "./config/env.js";
 
-const app: Express = express();
+const app = express();
 app.use(express.json());
 app.use(cookieParser());
 
@@ -25,38 +25,23 @@ app.get("/", (req, res) => {
   res.json({ status: "ok" });
 });
 
-const toErrorMessage = (err: unknown) =>
-  err instanceof Error ? err.message : String(err);
-
-type AuthUser = {
-  _id: { toString(): string };
-  email: string;
-  name?: string | null;
-};
-
 // Helper: generate tokens
-function generateTokens(user: AuthUser) {
-  const payload: jwt.JwtPayload = { sub: user._id.toString(), email: user.email };
+function generateTokens(user) {
+  const payload = { sub: user._id.toString(), email: user.email };
 
-  const accessToken = jwt.sign(payload, env.jwtAccessSecret as jwt.Secret, {
-    expiresIn: (env.jwtAccessExpiresIn as jwt.SignOptions["expiresIn"]) || "15m",
+  const accessToken = jwt.sign(payload, env.jwtAccessSecret, {
+    expiresIn: env.jwtAccessExpiresIn || "15m",
   });
 
-  const refreshToken = jwt.sign(payload, env.jwtRefreshSecret as jwt.Secret, {
-    expiresIn:
-      (env.jwtRefreshExpiresIn as jwt.SignOptions["expiresIn"]) || "7d",
+  const refreshToken = jwt.sign(payload, env.jwtRefreshSecret, {
+    expiresIn: env.jwtRefreshExpiresIn || "7d",
   });
 
   return { accessToken, refreshToken };
 }
 
 // Helper: set cookies
-function setAuthCookies(
-  res: Response,
-  accessToken: string,
-  refreshToken: string,
-  refreshMaxAgeMs: number,
-) {
+function setAuthCookies(res, accessToken, refreshToken, refreshMaxAgeMs) {
   const isProd = process.env.NODE_ENV === "production";
 
   res.cookie("access_token", accessToken, {
@@ -77,7 +62,7 @@ function setAuthCookies(
 }
 
 // User Registration
-app.post("/api/auth/register", async (req: Request, res: Response) => {
+app.post("/api/auth/register", async (req, res) => {
   console.log("Register endpoint called", req.body);
   try {
     const { email, password, name } = req.body;
@@ -109,12 +94,12 @@ app.post("/api/auth/register", async (req: Request, res: Response) => {
     console.error("Registration error:", err);
     return res
       .status(500)
-      .json({ message: "Server error.", error: toErrorMessage(err) });
+      .json({ message: "Server error.", error: err.message });
   }
 });
 
 // User Login (access + refresh tokens in cookies)
-app.post("/api/auth/login", async (req: Request, res: Response) => {
+app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -129,12 +114,7 @@ app.post("/api/auth/login", async (req: Request, res: Response) => {
       return res.status(401).json({ message: "Invalid credentials." });
     }
 
-    const passwordHash: string | null | undefined = user.passwordHash;
-    if (!passwordHash) {
-      return res.status(401).json({ message: "Invalid credentials." });
-    }
-
-    const isMatch = await bcrypt.compare(password, passwordHash as string);
+    const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials." });
     }
@@ -160,14 +140,12 @@ app.post("/api/auth/login", async (req: Request, res: Response) => {
     });
   } catch (err) {
     console.error("Login error:", err);
-    return res
-      .status(500)
-      .json({ message: "Server error.", error: toErrorMessage(err) });
+    return res.status(500).json({ message: "Server error." });
   }
 });
 
 // Refresh access token using refresh token
-app.post("/api/auth/refresh", async (req: Request, res: Response) => {
+app.post("/api/auth/refresh", async (req, res) => {
   try {
     const token =
       req.cookies?.refresh_token || req.body?.refreshToken || null;
@@ -200,14 +178,12 @@ app.post("/api/auth/refresh", async (req: Request, res: Response) => {
     return res.status(200).json({ message: "Token refreshed" });
   } catch (err) {
     console.error("Refresh error:", err);
-    return res
-      .status(500)
-      .json({ message: "Server error.", error: toErrorMessage(err) });
+    return res.status(500).json({ message: "Server error." });
   }
 });
 
 // Logout: clear cookies + delete refresh token
-app.post("/api/auth/logout", async (req: Request, res: Response) => {
+app.post("/api/auth/logout", async (req, res) => {
   try {
     const token = req.cookies?.refresh_token;
     if (token) {
@@ -234,14 +210,12 @@ app.post("/api/auth/logout", async (req: Request, res: Response) => {
     return res.status(200).json({ message: "Logged out" });
   } catch (err) {
     console.error("Logout error:", err);
-    return res
-      .status(500)
-      .json({ message: "Server error.", error: toErrorMessage(err) });
+    return res.status(500).json({ message: "Server error." });
   }
 });
 
 // Sync Auth0 user to MongoDB (unchanged)
-app.post("/api/auth/sync-auth0-user", async (req: Request, res: Response) => {
+app.post("/api/auth/sync-auth0-user", async (req, res) => {
   console.log("Sync Auth0 user endpoint called", req.body);
   try {
     const { auth0UserId, email, name, picture } = req.body;
@@ -314,7 +288,7 @@ app.post("/api/auth/sync-auth0-user", async (req: Request, res: Response) => {
     console.error("Sync Auth0 user error:", err);
     return res
       .status(500)
-      .json({ message: "Server error.", error: toErrorMessage(err) });
+      .json({ message: "Server error.", error: err.message });
   }
 });
 
