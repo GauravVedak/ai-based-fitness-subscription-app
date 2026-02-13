@@ -12,7 +12,7 @@ import { toast } from "sonner";
 
 interface SignUpPageProps {
   onSwitchToSignIn: () => void;
-  onSuccess?: (redirectTo?: string) => void;
+  onSuccess: (redirectTo?: string) => void;
 }
 
 export function SignUpPage({ onSwitchToSignIn, onSuccess }: SignUpPageProps) {
@@ -59,7 +59,7 @@ export function SignUpPage({ onSwitchToSignIn, onSuccess }: SignUpPageProps) {
     }
 
     toast.success("Account created successfully!");
-    onSuccess?.();
+    onSuccess();
   };
 
   return (

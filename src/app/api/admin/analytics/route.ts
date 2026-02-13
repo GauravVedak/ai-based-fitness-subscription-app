@@ -30,10 +30,8 @@ export async function GET(req: Request) {
     const orders = purchasesDb.collection("orders");
 
     // Signups: count users created per month (last 6 months)
-    type SignupAgg = { _id: { year: number; month: number }; count: number };
-
     const signupAgg = await userdata
-      .aggregate<SignupAgg>([
+      .aggregate([
         { $match: { createdAt: { $exists: true } } },
         {
           $group: {
@@ -49,7 +47,7 @@ export async function GET(req: Request) {
       ])
       .toArray();
 
-    const signups = signupAgg.map((x) => ({
+    const signups = signupAgg.map((x: { _id: { year: number; month: number }; count: number }) => ({
       month: MONTHS[(x._id.month ?? 1) - 1],
       year: x._id.year,
       signups: x.count,

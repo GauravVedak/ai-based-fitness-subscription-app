@@ -29,7 +29,6 @@ interface LatestBMI {
 interface FitnessMetrics {
   latestBMI?: LatestBMI;
   bmiHistory?: BMIHistoryEntry[];
-  bmi?: number;
   height?: number;
   weight?: number;
   unit?: "metric" | "imperial";
