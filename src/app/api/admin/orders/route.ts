@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDb } from "../../../../lib/mongodb";
+import { ensureMongoConnected, getDb } from "../../../../lib/mongodb";
 import { verifyAdmin } from "../../../../lib/admin/auth";
 
 /**
@@ -7,6 +7,16 @@ import { verifyAdmin } from "../../../../lib/admin/auth";
  * Returns all orders from Purchases.orders. Admin only.
  */
 export async function GET(req: Request) {
+  try {
+    await ensureMongoConnected("Purchases");
+  } catch (err) {
+    console.error("Mongo connection unavailable for admin orders:", err);
+    return NextResponse.json(
+      { ok: false, message: "Database unavailable, please retry shortly." },
+      { status: 503 },
+    );
+  }
+
   const auth = await verifyAdmin(req);
   if (!auth.ok) return auth.response;
 
