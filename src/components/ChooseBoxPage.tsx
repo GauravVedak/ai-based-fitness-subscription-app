@@ -5,7 +5,6 @@ import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { Input } from "./ui/input";
 import { useAuth } from "./AuthContext";
-import { useAIRecommendations, type Product } from "./AIRecommendationEngine";
 import {
   Plus,
   Minus,
@@ -20,7 +19,6 @@ import {
   X,
   Sparkles,
   Activity,
-  Award,
   ArrowRight,
 } from "lucide-react";
 import { ImageWithFallback } from "./figma/ImageWithFallback";
@@ -29,7 +27,19 @@ interface ChooseBoxPageProps {
   onSignInClick?: () => void;
 }
 
-const OLD_products: Product[] = [
+type Product = {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  description: string;
+  benefits: string[];
+  image: string;
+  aiRecommended?: boolean;
+  bmiCategory?: string[];
+};
+
+const products: Product[] = [
   // Weight Gainers
   {
     id: "1",
@@ -225,28 +235,12 @@ const CART_STORAGE_KEY = "vitalBoxCart";
 
 export function ChooseBoxPage({ onSignInClick }: ChooseBoxPageProps) {
   const { user } = useAuth();
-  const { getRecommendations, products, addProductFeedback, getAIInsights } =
-    useAIRecommendations();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>(
     [],
   );
   const [cartOpen, setCartOpen] = useState(false);
-  const [aiRecommendations, setAIRecommendations] = useState<
-    ReturnType<typeof getRecommendations>
-  >([]);
-  const [aiInsights, setAIInsights] = useState<
-    ReturnType<typeof getAIInsights>
-  >([]);
-
-  // Get AI recommendations
-  useEffect(() => {
-    const recommendations = getRecommendations();
-    setAIRecommendations(recommendations);
-    const insights = getAIInsights();
-    setAIInsights(insights);
-  }, [user, getRecommendations, getAIInsights]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -303,8 +297,6 @@ export function ChooseBoxPage({ onSignInClick }: ChooseBoxPageProps) {
     } else {
       setCart([...cart, { product, quantity: 1 }]);
     }
-    // Track as positive feedback
-    addProductFeedback(product.id, true);
   };
 
   const removeFromCart = (productId: string) => {
@@ -400,158 +392,46 @@ export function ChooseBoxPage({ onSignInClick }: ChooseBoxPageProps) {
           </p>
         </motion.div>
 
-        {/* AI Insights Banner */}
-        {aiInsights.length > 0 && (
+        {/* AI Advisor CTA Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.1 }}
+          className="mb-8"
+        >
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.1 }}
-            className="mb-8 space-y-4"
+            whileHover={{ scale: 1.01 }}
+            className="bg-gradient-to-r from-emerald-50/80 to-teal-50/80 backdrop-blur-xl rounded-3xl border border-emerald-200/40 p-6 cursor-pointer"
+            onClick={() => (window.location.hash = "#ai-advisor")}
           >
-            {aiInsights.slice(0, 2).map((insight, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 + idx * 0.1 }}
-                className={`bg-gradient-to-r backdrop-blur-xl rounded-3xl border p-6 ${
-                  insight.type === "achievement"
-                    ? "from-emerald-50/80 to-teal-50/80 border-emerald-200/40"
-                    : insight.type === "warning"
-                      ? "from-orange-50/80 to-amber-50/80 border-orange-200/40"
-                      : "from-blue-50/80 to-cyan-50/80 border-blue-200/40"
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      insight.type === "achievement"
-                        ? "bg-gradient-to-br from-emerald-500 to-teal-600"
-                        : insight.type === "warning"
-                          ? "bg-gradient-to-br from-orange-500 to-amber-600"
-                          : "bg-gradient-to-br from-blue-500 to-cyan-600"
-                    }`}
-                  >
-                    <Sparkles className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <h3
-                      className="text-gray-900 uppercase tracking-wider mb-2"
-                      style={{ fontSize: "0.75rem", fontWeight: 600 }}
-                    >
-                      {insight.type === "achievement"
-                        ? "Great Progress!"
-                        : insight.type === "warning"
-                          ? "Health Alert"
-                          : "AI Recommendation"}
-                    </h3>
-                    <p className="text-gray-700 mb-3">{insight.message}</p>
-                    {insight.products && insight.products.length > 0 && (
-                      <div className="flex gap-3 overflow-x-auto pb-2">
-                        {insight.products.map((product) => (
-                          <motion.div
-                            key={product.id}
-                            whileHover={{ y: -4 }}
-                            className="flex-shrink-0 w-40 bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-3 cursor-pointer"
-                            onClick={() => addToCart(product)}
-                          >
-                            <div className="w-full h-24 rounded-xl bg-gradient-to-br from-gray-100 to-gray-50 mb-2 overflow-hidden">
-                              <ImageWithFallback
-                                src={product.image}
-                                alt={product.name}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <p
-                              className="text-gray-900 text-xs mb-1 line-clamp-1"
-                              style={{ fontWeight: 600 }}
-                            >
-                              {product.name}
-                            </p>
-                            <p
-                              className="text-emerald-600 text-sm"
-                              style={{ fontWeight: 600 }}
-                            >
-                              ${product.price}
-                            </p>
-                          </motion.div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
-
-        {/* Top AI Recommendations */}
-        {aiRecommendations.filter((r) => r.category === "primary").length >
-          0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.15 }}
-            className="mb-8 bg-gradient-to-r from-emerald-50/80 to-teal-50/80 backdrop-blur-xl rounded-3xl border border-emerald-200/40 p-6"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                  <Award className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3
-                    className="text-gray-900 uppercase tracking-wider"
-                    style={{ fontSize: "0.875rem", fontWeight: 600 }}
-                  >
-                    Top Picks for You
-                  </h3>
-                  <p className="text-gray-600 text-sm">
-                    {user?.fitnessMetrics?.bmi
-                      ? `Based on your BMI: ${user.fitnessMetrics.bmi.toFixed(1)}`
-                      : "Highly recommended"}
-                  </p>
-                </div>
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3
+                  className="text-gray-900 uppercase tracking-wider mb-2"
+                  style={{ fontSize: "0.875rem", fontWeight: 600 }}
+                >
+                  Want Personalized Recommendations?
+                </h3>
+                <p className="text-gray-700 mb-3">
+                  Let our AI analyze your profile and recommend the best supplements based on your BMI, goals, and health data.
+                </p>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl shadow-md"
+                  style={{ fontWeight: 600, fontSize: "0.875rem" }}
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Get AI Recommendations
+                  <ArrowRight className="w-4 h-4" />
+                </motion.button>
               </div>
             </div>
-            <div className="flex gap-3 overflow-x-auto pb-2">
-              {aiRecommendations
-                .filter((r) => r.category === "primary")
-                .slice(0, 5)
-                .map((recommendation) => (
-                  <motion.div
-                    key={recommendation.product.id}
-                    whileHover={{ y: -4 }}
-                    className="flex-shrink-0 w-48 bg-white/70 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-4 cursor-pointer hover:border-emerald-300 transition-colors"
-                    onClick={() => addToCart(recommendation.product)}
-                  >
-                    <div className="w-full h-32 rounded-xl bg-gradient-to-br from-gray-100 to-gray-50 mb-3 overflow-hidden">
-                      <ImageWithFallback
-                        src={recommendation.product.image}
-                        alt={recommendation.product.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <p
-                      className="text-gray-900 text-sm mb-1 line-clamp-1"
-                      style={{ fontWeight: 600 }}
-                    >
-                      {recommendation.product.name}
-                    </p>
-                    <p
-                      className="text-emerald-600 mb-2"
-                      style={{ fontSize: "1rem", fontWeight: 600 }}
-                    >
-                      ${recommendation.product.price}
-                    </p>
-                    <p className="text-xs text-gray-600 line-clamp-2">
-                      {recommendation.rationale}
-                    </p>
-                  </motion.div>
-                ))}
-            </div>
           </motion.div>
-        )}
+        </motion.div>
 
         {/* Search and Filter Bar */}
         <motion.div
@@ -623,7 +503,7 @@ export function ChooseBoxPage({ onSignInClick }: ChooseBoxPageProps) {
                   {product.aiRecommended && (
                     <Badge className="absolute top-3 right-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-none shadow-lg">
                       <Sparkles className="w-3 h-3 mr-1" />
-                      AI Pick
+                      Popular
                     </Badge>
                   )}
                 </div>
