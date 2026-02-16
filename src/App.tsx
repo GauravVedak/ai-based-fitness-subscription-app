@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MinimalNavbar } from "./components/MinimalNavbar";
 import { HomePage } from "./components/HomePage";
 import { AIAdvisorPage } from "./components/AIAdvisorPage";
@@ -17,6 +17,9 @@ function AppContent() {
   const [intendedPage, setIntendedPage] = useState<string | null>(null);
   const { user } = useAuth();
 
+  // Guard to avoid repeated auth redirects
+  const hasQueuedAuthRef = useRef(false);
+
   useEffect(() => {
     // Handle hash changes for navigation
     const handleHashChange = () => {
@@ -34,19 +37,25 @@ function AppContent() {
   }, []);
 
   // Protected pages that require authentication
-  const protectedPages = [
-    "bmi",
-    "ai-advisor",
-    "user-panel",
-    "admin-panel",
-  ];
+  const protectedPages = ["bmi", "ai-advisor", "user-panel", "admin-panel"];
   const isProtectedPage = protectedPages.includes(currentPage);
 
   // If user tries to access protected page without being logged in
   useEffect(() => {
-    if (isProtectedPage && !user && !authMode) {
-      setIntendedPage(currentPage);
-      setAuthMode("signin");
+    if (!isProtectedPage || user || authMode) {
+      // When not in the redirect condition, reset the guard
+      hasQueuedAuthRef.current = false;
+      return;
+    }
+
+    if (!hasQueuedAuthRef.current) {
+      hasQueuedAuthRef.current = true;
+
+      // Defer state updates so they are not considered "synchronous" in the effect
+      setTimeout(() => {
+        setIntendedPage((prev) => prev ?? currentPage);
+        setAuthMode((prev) => prev ?? "signin");
+      }, 0);
     }
   }, [currentPage, user, authMode, isProtectedPage]);
 
@@ -64,6 +73,8 @@ function AppContent() {
 
   const handleAuthSuccess = (redirectTo?: string) => {
     setAuthMode(null);
+    hasQueuedAuthRef.current = false;
+
     if (redirectTo) {
       window.location.hash = `#${redirectTo}`;
       setIntendedPage(null);

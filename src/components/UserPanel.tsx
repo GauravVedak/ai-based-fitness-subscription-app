@@ -42,6 +42,72 @@ type BodyStatsForm = {
   weightUnit: "kg" | "lb";
 };
 
+type ChartPoint = {
+  date: string;
+  fullDate: string;
+  weight: number;
+  bmi: number;
+  goalWeight: number | null;
+  timestamp: number;
+};
+
+type RechartsDotProps = {
+  cx?: number;
+  cy?: number;
+};
+
+type TooltipPayloadItem = {
+  payload: ChartPoint;
+};
+
+type TooltipProps = {
+  active?: boolean;
+  payload?: TooltipPayloadItem[];
+};
+
+const CustomDot: React.FC<RechartsDotProps> = ({ cx, cy }) => {
+  if (cx == null || cy == null) return null;
+
+  return (
+    <g>
+      <circle
+        cx={cx}
+        cy={cy}
+        r={6}
+        fill="#10b981"
+        stroke="#ffffff"
+        strokeWidth={2}
+        style={{ filter: "drop-shadow(0px 2px 4px rgba(0,0,0,0.2))" }}
+      />
+      <circle cx={cx} cy={cy} r={3} fill="#ffffff" />
+    </g>
+  );
+};
+
+const CustomTooltip: React.FC<TooltipProps & { goalWeight: number | null }> = ({
+  active,
+  payload,
+  goalWeight,
+}) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-white/95 backdrop-blur-xl border border-emerald-200 rounded-xl p-3 shadow-lg">
+        <p className="text-xs font-semibold text-emerald-900 mb-1">
+          {data.fullDate}
+        </p>
+        <p className="text-sm text-gray-700">
+          <span className="font-bold text-emerald-600">{data.weight} kg</span>
+        </p>
+        {goalWeight && (
+          <p className="text-xs text-orange-600 mt-1">Goal: {goalWeight} kg</p>
+        )}
+      </div>
+    );
+  }
+  return null;
+};
+
 export function UserPanel() {
   const { user, logout, refreshUser } = useAuth();
   const [activeSection, setActiveSection] =
@@ -63,7 +129,7 @@ export function UserPanel() {
   const savedHeightUnit = user?.fitnessMetrics?.unit ?? "metric";
 
   // Compute chart data from bmiHistory
-  const chartData = useMemo(() => {
+  const chartData: ChartPoint[] = useMemo(() => {
     if (bmiHistory.length === 0) return [];
 
     const sorted = [...bmiHistory].sort(
@@ -116,8 +182,10 @@ export function UserPanel() {
     ];
   }, [currentWeight, startWeight, goalWeight, currentProgress]);
 
-  const minBMI = chartData.length > 0 ? Math.min(...chartData.map((p) => p.bmi)) : 0;
-  const maxBMI = chartData.length > 0 ? Math.max(...chartData.map((p) => p.bmi)) : 0;
+  const minBMI =
+    chartData.length > 0 ? Math.min(...chartData.map((p) => p.bmi)) : 0;
+  const maxBMI =
+    chartData.length > 0 ? Math.max(...chartData.map((p) => p.bmi)) : 0;
 
   const handleLogout = () => {
     logout();
@@ -227,46 +295,6 @@ export function UserPanel() {
       await refreshUser();
     }
     setIsSubmitting(false);
-  };
-
-  // Custom dot renderer for recorded entries
-  const CustomDot = (props: any) => {
-    const { cx, cy } = props;
-    return (
-      <g>
-        <circle
-          cx={cx}
-          cy={cy}
-          r={6}
-          fill="#10b981"
-          stroke="#ffffff"
-          strokeWidth={2}
-          style={{ filter: "drop-shadow(0px 2px 4px rgba(0,0,0,0.2))" }}
-        />
-        <circle cx={cx} cy={cy} r={3} fill="#ffffff" />
-      </g>
-    );
-  };
-
-  // Custom tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-white/95 backdrop-blur-xl border border-emerald-200 rounded-xl p-3 shadow-lg">
-          <p className="text-xs font-semibold text-emerald-900 mb-1">
-            {data.fullDate}
-          </p>
-          <p className="text-sm text-gray-700">
-            <span className="font-bold text-emerald-600">{data.weight} kg</span>
-          </p>
-          {goalWeight && (
-            <p className="text-xs text-orange-600 mt-1">Goal: {goalWeight} kg</p>
-          )}
-        </div>
-      );
-    }
-    return null;
   };
 
   return (
@@ -516,7 +544,11 @@ export function UserPanel() {
                         tickLine={{ stroke: "#d1d5db" }}
                         domain={["auto", "auto"]}
                       />
-                      <Tooltip content={<CustomTooltip />} />
+                      <Tooltip
+                        content={
+                          <CustomTooltip goalWeight={goalWeight} />
+                        }
+                      />
 
                       {/* Goal weight reference line */}
                       {goalWeight && (
@@ -659,7 +691,8 @@ export function UserPanel() {
                           {savedHeight > 0 && (
                             <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 mb-4">
                               <p className="text-xs text-emerald-700">
-                                <strong>Using saved height:</strong> {savedHeight}
+                                <strong>Using saved height:</strong>{" "}
+                                {savedHeight}
                                 {savedHeightUnit === "metric" ? "cm" : "ft"}
                               </p>
                             </div>
@@ -690,8 +723,9 @@ export function UserPanel() {
                                 onChange={(event) =>
                                   setBodyStatsForm((prev) => ({
                                     ...prev,
-                                    weightUnit: event.target
-                                      .value as BodyStatsForm["weightUnit"],
+                                    weightUnit:
+                                      event.target
+                                        .value as BodyStatsForm["weightUnit"],
                                   }))
                                 }
                                 className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"

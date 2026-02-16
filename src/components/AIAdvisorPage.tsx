@@ -77,7 +77,9 @@ export function AIAdvisorPage({ onSignInClick }: AIAdvisorPageProps) {
 
     let greeting = "";
     if (user && bmi) {
-      greeting = `Hi ${user.name}! I see your BMI is ${bmi.toFixed(1)} (${bmiCategory}). I'm here to help you find the perfect supplements for your fitness goals. What would you like to focus on?`;
+      greeting = `Hi ${user.name}! I see your BMI is ${bmi.toFixed(
+        1
+      )} (${bmiCategory}). I'm here to help you find the perfect supplements for your fitness goals. What would you like to focus on?`;
     } else if (user) {
       greeting = `Hi ${user.name}! I'm your AI supplement advisor. Tell me about your fitness goals, and I'll recommend supplements to help you achieve them.`;
     } else {
@@ -123,8 +125,10 @@ export function AIAdvisorPage({ onSignInClick }: AIAdvisorPageProps) {
       };
 
       setMessages((prev) => [...prev, aiMessage]);
-    } catch (err: any) {
-      setError(err.message || "Failed to get AI response");
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to get AI response";
+      setError(errorMessage);
 
       const fallbackMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -191,7 +195,7 @@ export function AIAdvisorPage({ onSignInClick }: AIAdvisorPageProps) {
   };
 
   return (
-    <div className=" pt-24 pb-12 px-4 md:px-6 relative overflow-hidden flex items-center justify-center">
+    <div className="min-h-screen pt-24 pb-12 px-4 md:px-6 relative overflow-hidden flex items-center justify-center">
       {/* Clean Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
@@ -559,7 +563,8 @@ export function AIAdvisorPage({ onSignInClick }: AIAdvisorPageProps) {
                                     Consult Your Doctor
                                   </p>
                                   <p className="text-xs text-purple-800">
-                                    Always speak with your healthcare provider before starting any new supplement regimen.
+                                    Always speak with your healthcare provider
+                                    before starting any new supplement regimen.
                                   </p>
                                 </div>
                               </div>

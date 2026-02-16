@@ -202,10 +202,7 @@ export function PromotionsSectionView({
           </CardHeader>
           <CardContent className="space-y-4">
             {promotionFormOpen ? (
-              <form
-                onSubmit={handleCreatePromotion}
-                className="space-y-4"
-              >
+              <form onSubmit={handleCreatePromotion} className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700">
                     Promotion Name
@@ -266,8 +263,8 @@ export function PromotionsSectionView({
                       onChange={(event) =>
                         setPromotionForm((prev) => ({
                           ...prev,
-                          discountType: event.target
-                            .value as Promotion["discountType"],
+                          discountType:
+                            event.target.value as Promotion["discountType"],
                         }))
                       }
                       className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
@@ -318,7 +315,7 @@ export function PromotionsSectionView({
               </form>
             ) : (
               <div className="rounded-2xl border border-dashed border-slate-200 p-6 text-center text-slate-500">
-                Click "Create Promotion" to add a new discount.
+                Click &quot;Create Promotion&quot; to add a new discount.
               </div>
             )}
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
@@ -326,8 +323,8 @@ export function PromotionsSectionView({
                 Checkout integration
               </p>
               <p>
-                New promotions will be available at customer checkout
-                once connected to the pricing service.
+                New promotions will be available at customer checkout once
+                connected to the pricing service.
               </p>
             </div>
           </CardContent>

@@ -20,10 +20,34 @@ type AIGuidance = {
   amazonLinks: AmazonLink[];
 };
 
+type BmiEntry = {
+  value: number;
+  category: string;
+  height: number;
+  weight: number;
+  unit: "metric" | "imperial";
+  date: string;
+};
+
+type FitnessMetrics = {
+  latestBMI?: BmiEntry;
+  bmiHistory?: BmiEntry[];
+  goalWeight?: number;
+  height?: number;
+  unit?: "metric" | "imperial";
+};
+
 interface JwtPayload {
-  sub: string;   
+  sub: string;
   email: string;
 }
+
+type UserDoc = {
+  _id: ObjectId;
+  name?: string;
+  email?: string;
+  fitnessMetrics?: FitnessMetrics;
+};
 
 export const runtime = "nodejs";
 
@@ -31,12 +55,15 @@ function buildPrompt(input: {
   message: string;
   user: {
     name?: string;
-    fitnessMetrics?: any;
+    fitnessMetrics?: FitnessMetrics;
   };
 }) {
   const fm = input.user.fitnessMetrics || {};
-  const latest = fm.latestBMI || {};
-  const bmiValue = typeof latest.value === "number" ? latest.value : null;
+  const latest = fm.latestBMI || ({} as BmiEntry);
+  const bmiValue =
+    typeof latest.value === "number" && Number.isFinite(latest.value)
+      ? latest.value
+      : null;
 
   return `
 You are a fitness and supplement guidance assistant.
@@ -110,7 +137,9 @@ export async function POST(req: Request) {
     }
 
     // 2 -> Parse body
-    const body = (await req.json().catch(() => null)) as { message?: string } | null;
+    const body = (await req.json().catch(() => null)) as
+      | { message?: string }
+      | null;
     const message = body?.message?.trim();
 
     if (!message) {
@@ -129,7 +158,7 @@ export async function POST(req: Request) {
 
     // 3 -> Load user
     const db = await getDb("Users");
-    const users = db.collection("userdata");
+    const users = db.collection<UserDoc>("userdata");
     const user = await users.findOne({ _id: new ObjectId(decoded.sub) });
 
     if (!user) {
@@ -140,7 +169,15 @@ export async function POST(req: Request) {
     }
 
     // 4 -> Call Gemini
-    const ai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return NextResponse.json(
+        { ok: false, message: "AI configuration missing" },
+        { status: 500 }
+      );
+    }
+
+    const ai = new GoogleGenerativeAI(apiKey);
     const model = ai.getGenerativeModel({ model: "gemini-flash-latest" });
 
     const prompt = buildPrompt({
@@ -152,7 +189,11 @@ export async function POST(req: Request) {
     let text = result.response.text().trim();
 
     // 5 -> Defensive parsing: strip ```json fences if present
-    text = text.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```$/i, "").trim();
+    text = text
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/```$/i, "")
+      .trim();
 
     let parsed: AIGuidance | null = null;
     try {
